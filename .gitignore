@@ -1,0 +1,10 @@
+.venv/
+.DS_Store
+outputs/
+separated/
+uploads/
+.venv/
+outputs/
+separated/
+uploads/
+*.wav
