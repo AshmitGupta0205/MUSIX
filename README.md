@@ -14,11 +14,11 @@
 
 # Features 🚀
 
-###🎼 AI-Powered Vocal Separation – Uses Demucs to remove vocals from any song.
-###🎤 Record Your Voice – Sing along with the instrumental track.
-###🎚 Adjust & Merge Audio – Blend your vocals with the background music.
-###📂 Download Your Karaoke Track – Save your final mix.
-###🌐 Web-Based Interface – No software installation needed.
+🎼 AI-Powered Vocal Separation – Uses Demucs to remove vocals from any song.
+🎤 Record Your Voice – Sing along with the instrumental track.
+🎚 Adjust & Merge Audio – Blend your vocals with the background music.
+📂 Download Your Karaoke Track – Save your final mix.
+🌐 Web-Based Interface – No software installation needed.
 
 # Tech Stack 🛠
 ###	Frontend: Streamlit
