@@ -12,7 +12,7 @@
 
 ### This tool is built for music lovers, content creators, and karaoke enthusiasts who want to create high-quality karaoke versions of their favorite songs.
 
-##🚀 Features
+🚀 Features
 
 ###🎼 AI-Powered Vocal Separation – Uses Demucs to remove vocals from any song.
 ###🎤 Record Your Voice – Sing along with the instrumental track.
