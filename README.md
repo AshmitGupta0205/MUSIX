@@ -1,7 +1,7 @@
 # MUSIX
 # MUSIX 🎵 - AI-Powered Karaoke Maker
 
-	##🎤 Create karaoke tracks by removing vocals and adding your own voice!
+	🎤 Create karaoke tracks by removing vocals and adding your own voice!
 
 ## MUSIX is a web-based Karaoke Maker that allows users to:
 ### ✅ Upload an MP3 file
@@ -21,9 +21,9 @@
 ###🌐 Web-Based Interface – No software installation needed.
 
 # Tech Stack 🛠
-###	•	Frontend: HTML, CSS, JavaScript
-###	•	Backend: Python, Flask
-###	•	AI Model: Demucs
-###	•	Libraries Used:
-###	             •	torch, torchaudio, pydub (for audio processing)
-###  	             •	Demucs (for vocal separation)
+###	Frontend: Streamlit
+###	Backend: Python
+###	AI Model: Demucs
+###	Libraries Used:
+###		• torch, torchaudio, pydub (for audio processing)
+###  		• Demucs (for vocal separation)
