@@ -1,4 +1,5 @@
 # MUSIX
+
 # MUSIX 🎵 - AI-Powered Karaoke Maker
 
 	🎤 Create karaoke tracks by removing vocals and adding your own voice!
@@ -9,6 +10,7 @@
 ### ✅ Sing and record their own voice
 ### ✅ Merge their voice with the background music
 ### ✅ Download the final track 🎶
+
 
 ### This tool is built for music lovers, content creators, and karaoke enthusiasts who want to create high-quality karaoke versions of their favorite songs.
 
