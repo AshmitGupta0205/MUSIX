@@ -1,118 +1,148 @@
-import os
 import streamlit as st
-import yt_dlp
+import os
 import sounddevice as sd
+import soundfile as sf
 import numpy as np
-import wave
-import shutil
+import subprocess
+import shlex
+import yt_dlp
+import librosa
+import librosa.display
+from datetime import datetime
 
-# Folder paths
-downloads_folder = "downloads"
-separated_folder = "separated"
-results_folder = "results"
+# Define directories
+UPLOAD_DIR = "uploads"
+DOWNLOADS_DIR = "downloads"
+SEPARATED_DIR = "separated"
+RESULTS_DIR = "results"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+os.makedirs(SEPARATED_DIR, exist_ok=True)
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# Ensure folders exist
-os.makedirs(downloads_folder, exist_ok=True)
-os.makedirs(separated_folder, exist_ok=True)
-os.makedirs(results_folder, exist_ok=True)
+st.title("\U0001F3A4 Karaoke Maker")
+st.write("Fetch a song, separate vocals, record your voice, and create a karaoke track!")
 
-st.title("Karaoke Maker 🎤🎶")
+# Function to check if input is a YouTube URL
+def is_youtube_url(input_text):
+    return "youtube.com" in input_text or "youtu.be" in input_text
 
-# User enters the song name
-song_name = st.text_input("Enter song name:")
-if song_name:
-    song_filename = f"{song_name}.mp3"
-    song_path = os.path.join(downloads_folder, song_filename)
+# Function to download from YouTube
+def download_youtube_audio(search_query):
+    if not is_youtube_url(search_query):
+        search_query = f"ytsearch1:{search_query}"
+    
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": os.path.join(DOWNLOADS_DIR, "%(title)s.%(ext)s"),
+        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
+        "noplaylist": True,
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info_dict = ydl.extract_info(search_query, download=True)
+            downloaded_file = ydl.prepare_filename(info_dict).replace(".webm", ".mp3").replace(".m4a", ".mp3")
+            return downloaded_file
+        except Exception as e:
+            st.error(f"❌ Error downloading: {e}")
+            return None
 
-    # Check if the song already exists before downloading
-    if not os.path.exists(song_path):
-        st.write("Downloading song...")
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': os.path.join(downloads_folder, '%(title)s.%(ext)s'),
-            'noplaylist': True,
-            'quiet': True
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"ytsearch:{song_name}", download=True)
-            if 'entries' in info:
-                song_path = os.path.join(downloads_folder, f"{info['entries'][0]['title']}.mp3")
-            else:
-                st.error("Failed to download song.")
-                st.stop()
-    else:
-        st.write("Song already downloaded. Skipping download.")
+# User input for YouTube URL or Song Name
+search_input = st.text_input("\U0001F3B6 Enter YouTube URL or Song Name")
+file_path = None
 
-    # Extract instrumental (Demucs processing)
-    # Extract instrumental (Demucs processing)
-    instrumental_path = os.path.join(separated_folder, f"{song_name}_no_vocals.wav")
-    if not os.path.exists(instrumental_path):
-        st.write("Extracting instrumental track...")
-        os.system(f'demucs --two-stems=vocals -o "{separated_folder}" "{song_path}"')
+if search_input and st.button("⬇️ Fetch & Download"):
+    st.info("⏳ Fetching audio from YouTube...")
+    downloaded_file_path = download_youtube_audio(search_input)
+    if downloaded_file_path and os.path.exists(downloaded_file_path):
+        file_path = downloaded_file_path
+        st.success(f"✅ Downloaded: {os.path.basename(downloaded_file_path)}")
+
+# File Upload Feature
+uploaded_file = st.file_uploader("Upload an MP3 or WAV file", type=["mp3", "wav"])
+if uploaded_file:
+    file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    st.success(f"✅ File uploaded: {uploaded_file.name}")
+
+if file_path and os.path.exists(file_path):
+    st.write(f"📂 Selected file: `{os.path.basename(file_path)}`")
+    
+    # Extract song duration
+    duration = librosa.get_duration(filename=file_path)
+    st.write(f"⏳ Song duration: {duration:.2f} seconds")
+    
+    # Separation Options
+    stem_options = {
+        "2 stems (Vocals + Instrumental)": "--two-stems vocals",
+        "4 stems (Vocals, Drums, Bass, Other)": ""
+    }
+    stem_choice = st.selectbox("\U0001F3A7 Choose how many stems to extract:", list(stem_options.keys()))
+    
+    if st.button("\U0001F3B5 Separate Audio"):
+        st.info("⏳ Processing... This may take a while.")
+        output_folder = os.path.join(SEPARATED_DIR)
+        os.makedirs(output_folder, exist_ok=True)
         
-        # Move the extracted instrumental to the correct location
-        extracted_folder = os.path.join(separated_folder, song_name)
-        extracted_file = os.path.join(extracted_folder, "no_vocals.wav")
-        if os.path.exists(extracted_file):
-            shutil.move(extracted_file, instrumental_path)
-        else:
-            st.error("Instrumental file not found! Check extraction process.")
-            st.stop()
-    else:
-        st.write("Instrumental already extracted.")
-
-    # Play instrumental
-    st.audio(instrumental_path)
-
-    # Get instrumental duration from the WAV file
-    def get_audio_duration(wav_file):
-        with wave.open(wav_file, "rb") as wf:
-            frames = wf.getnframes()
-            rate = wf.getframerate()
-            return frames / float(rate)
-
-    instrumental_duration = get_audio_duration(instrumental_path)
-
-    # Record user voice
-    st.write(f"Recording for {int(instrumental_duration)} seconds. Sing now!")
-    duration = int(instrumental_duration)  # Match instrumental duration
-    samplerate = 44100  # Standard sample rate
-
-    recorded_audio = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=1, dtype='int16')
-    sd.wait()
-
-    # Save recorded voice
-    recorded_path = os.path.join(results_folder, "user_voice.wav")
-    with wave.open(recorded_path, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)  # 16-bit audio
-        wf.setframerate(samplerate)
-        wf.writeframes(recorded_audio.tobytes())
-
-    # Merge instrumental and recorded voice
-    final_output_path = os.path.join(results_folder, "final_karaoke.wav")
-
-    def merge_audio_tracks(track1, track2, output_file):
-        with wave.open(track1, "rb") as wf1, wave.open(track2, "rb") as wf2:
-            if wf1.getnframes() > wf2.getnframes():
-                padding = wf1.getnframes() - wf2.getnframes()
-                recorded_audio = np.pad(np.frombuffer(wf2.readframes(wf2.getnframes()), dtype=np.int16),
-                                        (0, padding), 'constant')
+        demucs_command = f"demucs {stem_options[stem_choice]} -o {output_folder} {shlex.quote(file_path)}"
+        process = subprocess.run(demucs_command, shell=True, text=True, capture_output=True)
+        
+        if process.returncode == 0:
+            song_name = os.path.splitext(os.path.basename(file_path))[0]
+            stem_folder = os.path.join(output_folder, "htdemucs", song_name)
+            
+            if os.path.exists(stem_folder):
+                for stem in os.listdir(stem_folder):
+                    stem_path = os.path.join(stem_folder, stem)
+                    st.audio(stem_path)
+                    with open(stem_path, "rb") as f:
+                        st.download_button(f"Download {stem}", f, file_name=stem)
+                st.success("✅ Separation complete!")
             else:
-                recorded_audio = np.frombuffer(wf2.readframes(wf2.getnframes()), dtype=np.int16)
+                st.error("❌ Separation failed: Output folder not found.")
+        else:
+            st.error("❌ Demucs error! Check logs for details.")
 
-            instrumental_audio = np.frombuffer(wf1.readframes(wf1.getnframes()), dtype=np.int16)
-            merged_audio = instrumental_audio + recorded_audio
+# Karaoke Recording Feature
+st.header("\U0001F3A4 Karaoke Recorder")
 
-            with wave.open(output_file, "wb") as wf_out:
-                wf_out.setnchannels(1)
-                wf_out.setsampwidth(2)  # 16-bit audio
-                wf_out.setframerate(wf1.getframerate())
-                wf_out.writeframes(merged_audio.astype(np.int16).tobytes())
+if file_path:
+    song_name = os.path.splitext(os.path.basename(file_path))[0]
+    instrumental_path = None
+    instrumental_folder = os.path.join(SEPARATED_DIR, "htdemucs", song_name)
+    if os.path.exists(instrumental_folder):
+        for file in os.listdir(instrumental_folder):
+            if "no_vocals" in file or "instrumental" in file:
+                instrumental_path = os.path.join(instrumental_folder, file)
+                break
+    
+    if instrumental_path:
+        st.audio(instrumental_path, format='audio/mp3')
+        instrumental_duration = librosa.get_duration(filename=instrumental_path)
+        st.write(f"🎵 Instrumental Duration: {instrumental_duration:.2f} seconds")
 
-    merge_audio_tracks(instrumental_path, recorded_path, final_output_path)
-
-    # Provide download button
-    st.success("Karaoke track is ready!")
-    with open(final_output_path, "rb") as f:
-        st.download_button("Download Karaoke Track", f, file_name="karaoke_output.wav", mime="audio/wav")
+        if st.button("🎤 Start Recording"):
+            st.info("🎙️ Recording... Speak into the microphone!")
+            samplerate = 44100
+            recording = sd.rec(int(instrumental_duration * samplerate), samplerate=samplerate, channels=1, dtype=np.int16)
+            sd.wait()
+            
+            recorded_voice_path = os.path.join(RESULTS_DIR, f"{song_name}_recorded.wav")
+            sf.write(recorded_voice_path, recording, samplerate)
+            st.success("✅ Recording complete!")
+            
+            # Add timestamp to avoid overwriting
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            final_karaoke_path = os.path.join(RESULTS_DIR, f"{song_name}_karaoke_{timestamp}.wav")
+            
+            # Merge Instrumental and Voice with adjusted volumes
+            merge_command = f"ffmpeg -i {shlex.quote(instrumental_path)} -i {shlex.quote(recorded_voice_path)} -filter_complex '[0:a]volume=0.7[a0];[1:a]volume=1.5[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2' {shlex.quote(final_karaoke_path)}"
+            subprocess.run(merge_command, shell=True)
+            
+            if os.path.exists(final_karaoke_path):
+                st.success("✅ Karaoke track created!")
+                st.audio(final_karaoke_path, format='audio/wav')
+                with open(final_karaoke_path, "rb") as f:
+                    st.download_button("⬇️ Download Karaoke Track", f, file_name=os.path.basename(final_karaoke_path))
