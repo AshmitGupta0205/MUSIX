@@ -1,13 +1,12 @@
 import streamlit as st
 import os
-import sounddevice as sd
-import soundfile as sf
-import numpy as np
 import subprocess
 import shlex
 import yt_dlp
+import sounddevice as sd
+import soundfile as sf
+import numpy as np
 import librosa
-import librosa.display
 from datetime import datetime
 
 # Define directories
@@ -20,8 +19,16 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 os.makedirs(SEPARATED_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-st.title("\U0001F3A4 Karaoke Maker")
+# ---- UI Setup ----
+st.set_page_config(page_title="🎤 AI Karaoke Maker", page_icon="🎶", layout="wide")
+st.title("🎤 AI Karaoke Maker")
 st.write("Fetch a song, separate vocals, record your voice, and create a karaoke track!")
+
+# Sidebar Navigation
+st.sidebar.header("Navigation")
+if st.sidebar.button("🏠 Back to Home", key="sidebar_home"):
+    subprocess.Popen(["streamlit", "run", "app.py"])
+    st.stop()
 
 # Function to check if input is a YouTube URL
 def is_youtube_url(input_text):
@@ -49,7 +56,7 @@ def download_youtube_audio(search_query):
             return None
 
 # User input for YouTube URL or Song Name
-search_input = st.text_input("\U0001F3B6 Enter YouTube URL or Song Name")
+search_input = st.text_input("🎶 Enter YouTube URL or Song Name")
 file_path = None
 
 if search_input and st.button("⬇️ Fetch & Download"):
@@ -68,45 +75,30 @@ if uploaded_file:
     st.success(f"✅ File uploaded: {uploaded_file.name}")
 
 if file_path and os.path.exists(file_path):
-    st.write(f"📂 Selected file: `{os.path.basename(file_path)}`")
+    st.write(f"📂 Selected file: {os.path.basename(file_path)}")
     
     # Extract song duration
     duration = librosa.get_duration(filename=file_path)
     st.write(f"⏳ Song duration: {duration:.2f} seconds")
     
     # Separation Options
-    stem_options = {
-        "2 stems (Vocals + Instrumental)": "--two-stems vocals",
-        "4 stems (Vocals, Drums, Bass, Other)": ""
-    }
-    stem_choice = st.selectbox("\U0001F3A7 Choose how many stems to extract:", list(stem_options.keys()))
-    
-    if st.button("\U0001F3B5 Separate Audio"):
+    stem_choice = "2 stems (Vocals + Instrumental)"  # Fixed to 2 stems since karaoke only needs instrumentals
+
+    if st.button("🎵 Separate Audio"):
         st.info("⏳ Processing... This may take a while.")
         output_folder = os.path.join(SEPARATED_DIR)
         os.makedirs(output_folder, exist_ok=True)
         
-        demucs_command = f"demucs {stem_options[stem_choice]} -o {output_folder} {shlex.quote(file_path)}"
+        demucs_command = f"demucs --two-stems vocals -o {output_folder} {shlex.quote(file_path)}"
         process = subprocess.run(demucs_command, shell=True, text=True, capture_output=True)
         
         if process.returncode == 0:
-            song_name = os.path.splitext(os.path.basename(file_path))[0]
-            stem_folder = os.path.join(output_folder, "htdemucs", song_name)
-            
-            if os.path.exists(stem_folder):
-                for stem in os.listdir(stem_folder):
-                    stem_path = os.path.join(stem_folder, stem)
-                    st.audio(stem_path)
-                    with open(stem_path, "rb") as f:
-                        st.download_button(f"Download {stem}", f, file_name=stem)
-                st.success("✅ Separation complete!")
-            else:
-                st.error("❌ Separation failed: Output folder not found.")
+            st.success("✅ Separation complete! Proceed to recording.")
         else:
             st.error("❌ Demucs error! Check logs for details.")
 
 # Karaoke Recording Feature
-st.header("\U0001F3A4 Karaoke Recorder")
+st.header("🎤 Karaoke Recorder")
 
 if file_path:
     song_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -123,7 +115,7 @@ if file_path:
         instrumental_duration = librosa.get_duration(filename=instrumental_path)
         st.write(f"🎵 Instrumental Duration: {instrumental_duration:.2f} seconds")
 
-        if st.button("🎤 Start Recording"):
+        if st.button("🎙️ Start Recording"):
             st.info("🎙️ Recording... Speak into the microphone!")
             samplerate = 44100
             recording = sd.rec(int(instrumental_duration * samplerate), samplerate=samplerate, channels=1, dtype=np.int16)
@@ -146,3 +138,9 @@ if file_path:
                 st.audio(final_karaoke_path, format='audio/wav')
                 with open(final_karaoke_path, "rb") as f:
                     st.download_button("⬇️ Download Karaoke Track", f, file_name=os.path.basename(final_karaoke_path))
+
+# "Back to Home" Button
+st.markdown("---")
+if st.button("🏠 Back to Home", key="main_home"):
+    subprocess.Popen(["streamlit", "run", "app.py"])
+    st.stop()
