@@ -56,7 +56,6 @@ MUSIX/
 │── downloads/      # Stores downloaded songs
 │── uploads/        # Stores uploaded audio files
 │── separated/      # Stores extracted stems
-│── outputs/        # Stores final merged karaoke track
 │── results/        # Stores processed audio results
 │── README.md       # Project documentation
 ```
