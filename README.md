@@ -3,7 +3,7 @@
 MUSIX is a web-based application that provides advanced audio processing capabilities using AI models like **htdemucs**. The project consists of two main components:
 
 1. **Home.py - Web-Based AI Audio Separator**
-2. **Karaoke-Maker.py - Karaoke Maker
+2. Karaoke-Maker.py - Karaoke Maker
 
 ---
 
@@ -80,8 +80,8 @@ Ensure you have **htdemucs**, **yt-dlp**, **Streamlit**, and **FFmpeg** installe
 ---
 
 ## 📌 Notes
-- `app.py` runs on **Streamlit** for an easy-to-use web interface.
-- `karaoke.py` is a separate module that focuses on karaoke functionality.
+- `Home.py` runs on **Streamlit** for an easy-to-use web interface.
+- `Karaoke-Maker.py` is a separate module that focuses on karaoke functionality.
 - Output files are stored in the `separated/` and `outputs/` folders.
 
 ---
