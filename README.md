@@ -2,8 +2,8 @@
 
 MUSIX is a web-based application that provides advanced audio processing capabilities using AI models like **htdemucs**. The project consists of two main components:
 
-1. **app.py - Web-Based AI Audio Separator**
-2. **karaoke.py - Karaoke Maker
+1. **Home.py - Web-Based AI Audio Separator**
+2. **Karaoke-Maker.py - Karaoke Maker
 
 ---
 
