@@ -14,6 +14,7 @@ UPLOAD_DIR = "uploads"
 DOWNLOADS_DIR = "downloads"
 SEPARATED_DIR = "separated"
 RESULTS_DIR = "results"
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 os.makedirs(SEPARATED_DIR, exist_ok=True)
@@ -23,12 +24,6 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 st.set_page_config(page_title="🎤 AI Karaoke Maker", page_icon="🎶", layout="wide")
 st.title("🎤 AI Karaoke Maker")
 st.write("Fetch a song, separate vocals, record your voice, and create a karaoke track!")
-
-# Sidebar Navigation
-st.sidebar.header("Navigation")
-if st.sidebar.button("🏠 Back to Home", key="sidebar_home"):
-    subprocess.Popen(["streamlit", "run", "app.py"])
-    st.stop()
 
 # Function to check if input is a YouTube URL
 def is_youtube_url(input_text):
@@ -74,16 +69,18 @@ if uploaded_file:
         f.write(uploaded_file.getbuffer())
     st.success(f"✅ File uploaded: {uploaded_file.name}")
 
+# Ensure a file is selected
 if file_path and os.path.exists(file_path):
     st.write(f"📂 Selected file: {os.path.basename(file_path)}")
     
     # Extract song duration
-    duration = librosa.get_duration(filename=file_path)
-    st.write(f"⏳ Song duration: {duration:.2f} seconds")
-    
-    # Separation Options
-    stem_choice = "2 stems (Vocals + Instrumental)"  # Fixed to 2 stems since karaoke only needs instrumentals
+    try:
+        duration = librosa.get_duration(filename=file_path)
+        st.write(f"⏳ Song duration: {duration:.2f} seconds")
+    except Exception:
+        st.warning("⚠️ Unable to retrieve duration.")
 
+    # Separation Options
     if st.button("🎵 Separate Audio"):
         st.info("⏳ Processing... This may take a while.")
         output_folder = os.path.join(SEPARATED_DIR)
@@ -104,16 +101,20 @@ if file_path:
     song_name = os.path.splitext(os.path.basename(file_path))[0]
     instrumental_path = None
     instrumental_folder = os.path.join(SEPARATED_DIR, "htdemucs", song_name)
+
     if os.path.exists(instrumental_folder):
         for file in os.listdir(instrumental_folder):
             if "no_vocals" in file or "instrumental" in file:
                 instrumental_path = os.path.join(instrumental_folder, file)
                 break
-    
-    if instrumental_path:
+
+    if instrumental_path and os.path.exists(instrumental_path):
         st.audio(instrumental_path, format='audio/mp3')
-        instrumental_duration = librosa.get_duration(filename=instrumental_path)
-        st.write(f"🎵 Instrumental Duration: {instrumental_duration:.2f} seconds")
+        try:
+            instrumental_duration = librosa.get_duration(filename=instrumental_path)
+            st.write(f"🎵 Instrumental Duration: {instrumental_duration:.2f} seconds")
+        except Exception:
+            st.warning("⚠️ Unable to retrieve duration.")
 
         if st.button("🎙️ Start Recording"):
             st.info("🎙️ Recording... Speak into the microphone!")
@@ -138,9 +139,5 @@ if file_path:
                 st.audio(final_karaoke_path, format='audio/wav')
                 with open(final_karaoke_path, "rb") as f:
                     st.download_button("⬇️ Download Karaoke Track", f, file_name=os.path.basename(final_karaoke_path))
-
-# "Back to Home" Button
-st.markdown("---")
-if st.button("🏠 Back to Home", key="main_home"):
-    subprocess.Popen(["streamlit", "run", "app.py"])
-    st.stop()
+            else:
+                st.error("❌ Merging failed!")

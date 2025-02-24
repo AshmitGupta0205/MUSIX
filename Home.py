@@ -18,14 +18,6 @@ st.set_page_config(page_title="🎵 AI Audio Separator", page_icon="🎼", layou
 st.title("🎵 AI Audio Separator")
 st.write("Extract vocals and instrumentals from any song!")
 
-# Sidebar Navigation
-st.sidebar.header("Navigation")
-page = st.sidebar.radio("Go to", ["🎵 Audio Separator (Home)", "🎤 Karaoke Maker"])
-
-if page == "🎤 Karaoke Maker":
-    subprocess.Popen(["streamlit", "run", "karaoke.py"])
-    st.stop()
-
 # Function to check if input is a YouTube URL
 def is_youtube_url(input_text):
     return "youtube.com" in input_text or "youtu.be" in input_text
@@ -108,8 +100,3 @@ if file_path and os.path.exists(file_path):
                 st.error("❌ Separation failed: Output folder not found.")
         else:
             st.error("❌ Demucs error! Check logs for details.")
-
-st.markdown("---")
-if st.button("🎤 Go to Karaoke Maker"):
-    subprocess.Popen(["streamlit", "run", "karaoke.py"])
-    st.stop()
