@@ -1,21 +1,31 @@
 #!/bin/bash
 
-# Update and install required dependencies
+# Update package list and install required dependencies
 apt-get update && apt-get install -y \
     portaudio19-dev libasound2-dev libffi-dev ffmpeg python3-dev gcc g++ make pkg-config
+
+# Manually install PortAudio (Fix missing headers)
+cd /tmp
+wget http://files.portaudio.com/archives/pa_stable_v190700_20210406.tgz
+tar -xvzf pa_stable_v190700_20210406.tgz
+cd portaudio
+./configure && make && make install
+cd ..
+
+# Set environment variables for PortAudio
+export CFLAGS="-I/usr/local/include"
+export LDFLAGS="-L/usr/local/lib"
+export LD_LIBRARY_PATH="/usr/local/lib"
 
 # Ensure pip is up to date
 pip install --upgrade pip setuptools wheel
 
-# Find requirements.txt dynamically
-REQ_FILE=$(find /opt/render/project/src -name "requirements.txt" | head -n 1)
-
-if [ -z "$REQ_FILE" ]; then
-    echo "❌ ERROR: requirements.txt not found!"
-    exit 1
+# Check if requirements.txt exists before installing
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt
 else
-    echo "📄 Found requirements.txt at $REQ_FILE"
-    pip install -r "$REQ_FILE"
+    echo "❌ ERROR: requirements.txt not found!"
+    exit 1  # Stop the build if missing
 fi
 
 # Print success message
