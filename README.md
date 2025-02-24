@@ -3,11 +3,11 @@
 MUSIX is a web-based application that provides advanced audio processing capabilities using AI models like **htdemucs**. The project consists of two main components:
 
 1. **app.py - Web-Based AI Audio Separator**
-2. **karaoke.py - Karaoke Maker**
+2. **karaoke.py - Karaoke Maker
 
 ---
 
-## 🎵 Web-Based AI Audio Separator (`app.py`)
+## 🎵 Web-Based AI Audio Separator (`Home.py`)
 This tool allows users to separate vocals and instrumentals from songs using the **htdemucs** model.
 
 ### Features:
@@ -17,9 +17,9 @@ This tool allows users to separate vocals and instrumentals from songs using the
 - **Uses htdemucs** for high-quality music separation.
 
 ### How to Use:
-1. Run `app.py` using Streamlit:
+1. Run `Home.py` using Streamlit:
    ```bash
-   streamlit run app.py
+   streamlit run Home.py
    ```
 2. Upload an audio file or enter a YouTube link.
 3. Select the number of stems to extract.
@@ -27,7 +27,7 @@ This tool allows users to separate vocals and instrumentals from songs using the
 
 ---
 
-## 🎤 Karaoke Maker (`karaoke.py`)
+## 🎤 Karaoke Maker (`Karaoke-Maker.py`)
 This module transforms a song into a **karaoke track** by removing vocals and allowing users to sing along.
 
 ### Features:
@@ -38,9 +38,9 @@ This module transforms a song into a **karaoke track** by removing vocals and al
 - **Includes pitch shifting** and **lyrics display** for a better experience.
 
 ### How to Use:
-1. Run `karaoke.py` separately:
+1. Run `Karaoke-Maker.py` separately:
    ```bash
-   streamlit run karaoke.py
+   streamlit run Karaoke-Maker.py
    ```
 2. Enter a song name to fetch and process it.
 3. Sing along while the instrumental plays in the background.
@@ -50,14 +50,21 @@ This module transforms a song into a **karaoke track** by removing vocals and al
 
 ## 📂 Project Directory Structure
 ```
-MUSIX/
-│── app.py          # Web-based AI Audio Separator
-│── karaoke.py      # Karaoke Maker
-│── downloads/      # Stores downloaded songs
-│── uploads/        # Stores uploaded audio files
-│── separated/      # Stores extracted stems
-│── results/        # Stores processed audio results
-│── README.md       # Project documentation
+MUSIX/  
+│── downloads/            # Stores downloaded songs for Demucs processing  
+│── separated/            # Stores extracted instrumental tracks  
+│── uploads/              # Likely used for user uploads  
+│── outputs/              # Stores final processed audio files after separation  
+│── results/              # Stores final merged karaoke track  
+│  
+├── pages/  
+│   ├── Karaoke-Maker.py  # Renamed from karaoke.py (Karaoke Maker Page)  
+│  
+├── Home.py               # Renamed from app.py (Main Home Page)  
+├── Procfile              # Added for deployment (used by Render/Heroku)  
+├── runtime.txt           # Added for specifying Python runtime version  
+│  
+└── requirements.txt      # Dependencies for the project  
 ```
 
 ---
