@@ -40,7 +40,12 @@ def download_youtube_audio(search_query):
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "noplaylist": True,
     }
-    
+
+    # 🔹 Check for cookies.txt (for YouTube authentication)
+    cookies_path = "cookies.txt"
+    if os.path.exists(cookies_path):
+        ydl_opts["cookiefile"] = cookies_path  # Use stored cookies for authentication
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info_dict = ydl.extract_info(search_query, download=True)
@@ -85,14 +90,15 @@ if file_path and os.path.exists(file_path):
         st.info("⏳ Processing... This may take a while.")
         output_folder = os.path.join(SEPARATED_DIR)
         os.makedirs(output_folder, exist_ok=True)
-        
-        demucs_command = f"demucs --two-stems vocals -o {output_folder} {shlex.quote(file_path)}"
+
+        # Updated demucs command
+        demucs_command = f"demucs --two-stems=vocals -o {shlex.quote(output_folder)} {shlex.quote(file_path)}"
         process = subprocess.run(demucs_command, shell=True, text=True, capture_output=True)
-        
+
         if process.returncode == 0:
             st.success("✅ Separation complete! Proceed to recording.")
         else:
-            st.error("❌ Demucs error! Check logs for details.")
+            st.error(f"❌ Demucs error! {process.stderr}")
 
 # Karaoke Recording Feature
 st.header("🎤 Karaoke Recorder")
@@ -121,23 +127,23 @@ if file_path:
             samplerate = 44100
             recording = sd.rec(int(instrumental_duration * samplerate), samplerate=samplerate, channels=1, dtype=np.int16)
             sd.wait()
-            
+
             recorded_voice_path = os.path.join(RESULTS_DIR, f"{song_name}_recorded.wav")
             sf.write(recorded_voice_path, recording, samplerate)
             st.success("✅ Recording complete!")
-            
+
             # Add timestamp to avoid overwriting
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             final_karaoke_path = os.path.join(RESULTS_DIR, f"{song_name}_karaoke_{timestamp}.wav")
-            
+
             # Merge Instrumental and Voice with adjusted volumes
             merge_command = f"ffmpeg -i {shlex.quote(instrumental_path)} -i {shlex.quote(recorded_voice_path)} -filter_complex '[0:a]volume=0.7[a0];[1:a]volume=1.5[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2' {shlex.quote(final_karaoke_path)}"
-            subprocess.run(merge_command, shell=True)
-            
+            merge_process = subprocess.run(merge_command, shell=True, capture_output=True, text=True)
+
             if os.path.exists(final_karaoke_path):
                 st.success("✅ Karaoke track created!")
                 st.audio(final_karaoke_path, format='audio/wav')
                 with open(final_karaoke_path, "rb") as f:
                     st.download_button("⬇️ Download Karaoke Track", f, file_name=os.path.basename(final_karaoke_path))
             else:
-                st.error("❌ Merging failed!")
+                st.error(f"❌ Merging failed! {merge_process.stderr}")
