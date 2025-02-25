@@ -1,24 +1,21 @@
-# Use the official Python image
 FROM python:3.10
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    LD_LIBRARY_PATH="/usr/lib:/usr/local/lib"
-
-# Install dependencies
-RUN apt-get update && apt-get install -y portaudio19-dev && \
-    pip install --upgrade pip setuptools wheel && \
-    pip install sounddevice && \
-    pip install -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    portaudio19-dev libasound2-dev libffi-dev ffmpeg
 
 # Set the working directory
 WORKDIR /Home
 
-# Copy the project files
-COPY . /Home
+# Copy project files
+COPY . .
 
-# Expose port 8501 (default for Streamlit)
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose the Streamlit default port
 EXPOSE 8501
 
 # Command to run the Streamlit app
-CMD streamlit run pages/Karaoke-Maker.py --server.port $PORT
+CMD ["streamlit", "run", "Home.py"]
