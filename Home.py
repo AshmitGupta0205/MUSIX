@@ -37,7 +37,6 @@ def download_youtube_audio(search_query, use_cookies):
         "noplaylist": True,
     }
 
-    # Use cookies if the option is enabled
     if use_cookies:
         cookies_path = "cookies.txt"
         if os.path.exists(cookies_path):
@@ -60,7 +59,7 @@ file_path = None
 
 if search_input and st.button("⬇️ Fetch & Download"):
     st.info("⏳ Fetching audio from YouTube...")
-    downloaded_file_path = download_youtube_audio(search_input)
+    downloaded_file_path = download_youtube_audio(search_input, allow_cookies)
     if downloaded_file_path and os.path.exists(downloaded_file_path):
         file_path = downloaded_file_path
         st.success(f"✅ Downloaded: {os.path.basename(downloaded_file_path)}")
@@ -76,27 +75,23 @@ if uploaded_file:
 if file_path and os.path.exists(file_path):
     st.write(f"📂 Selected file: {os.path.basename(file_path)}")
     
-    # Extract song duration
     try:
         duration = librosa.get_duration(filename=file_path)
         st.write(f"⏳ Song duration: {duration:.2f} seconds")
     except Exception as e:
         st.warning(f"⚠️ Could not retrieve duration: {e}")
 
-    # Separation Options
     stem_options = {
         "2 stems (Vocals + Instrumental)": "--two-stems vocals",
         "4 stems (Vocals, Drums, Bass, Other)": ""
     }
     stem_choice = st.selectbox("🎼 Choose how many stems to extract:", list(stem_options.keys()))
 
-    # 🎵 **"Separate Audio" Button Added Here**
     if st.button("🎵 Separate Audio"):
         st.info("⏳ Processing... This may take a while.")
         output_folder = os.path.join(SEPARATED_DIR)
         os.makedirs(output_folder, exist_ok=True)
 
-        # Execute Demucs
         demucs_command = f"demucs {stem_options[stem_choice]} -o {shlex.quote(output_folder)} {shlex.quote(file_path)}"
         process = subprocess.run(demucs_command, shell=True, text=True, capture_output=True)
 
