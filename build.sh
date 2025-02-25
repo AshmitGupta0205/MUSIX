@@ -2,7 +2,7 @@
 
 # Update package list and install required dependencies
 apt-get update && apt-get install -y \
-    portaudio19-dev libasound2-dev libffi-dev ffmpeg python3-dev gcc g++ make pkg-config
+    portaudio19-dev libasound2-dev libffi-dev ffmpeg python3-dev gcc g++ make pkg-config autoconf automake wget
 
 # Manually install PortAudio (Fix missing headers)
 cd /tmp
@@ -16,6 +16,9 @@ cd ..
 export CFLAGS="-I/usr/local/include"
 export LDFLAGS="-L/usr/local/lib"
 export LD_LIBRARY_PATH="/usr/local/lib"
+
+# Refresh shared library cache
+ldconfig
 
 # Ensure pip is up to date
 pip install --upgrade pip setuptools wheel

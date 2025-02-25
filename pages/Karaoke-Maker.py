@@ -21,7 +21,7 @@ os.makedirs(SEPARATED_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 # ---- UI Setup ----
-st.set_page_config(page_title="🎤 AI Karaoke Maker", page_icon="🎶", layout="wide")
+st.set_page_config(page_title="AI Karaoke Maker", page_icon="🎶", layout="wide")
 st.title("🎤 AI Karaoke Maker")
 st.write("Fetch a song, separate vocals, record your voice, and create a karaoke track!")
 
@@ -29,8 +29,11 @@ st.write("Fetch a song, separate vocals, record your voice, and create a karaoke
 def is_youtube_url(input_text):
     return "youtube.com" in input_text or "youtu.be" in input_text
 
-# Function to download from YouTube
-def download_youtube_audio(search_query):
+# Add a checkbox in Streamlit UI
+allow_cookies = st.checkbox("Allow cookies for YouTube authentication")
+
+# Function to download from YouTube with optional cookies
+def download_youtube_audio(search_query, use_cookies):
     if not is_youtube_url(search_query):
         search_query = f"ytsearch1:{search_query}"
     
@@ -41,10 +44,13 @@ def download_youtube_audio(search_query):
         "noplaylist": True,
     }
 
-    # 🔹 Check for cookies.txt (for YouTube authentication)
-    cookies_path = "cookies.txt"
-    if os.path.exists(cookies_path):
-        ydl_opts["cookiefile"] = cookies_path  # Use stored cookies for authentication
+    # Use cookies if the option is enabled
+    if use_cookies:
+        cookies_path = "cookies.txt"
+        if os.path.exists(cookies_path):
+            ydl_opts["cookiefile"] = cookies_path
+        else:
+            st.warning("⚠️ cookies.txt not found! Download may fail for private or age-restricted videos.")
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
@@ -55,18 +61,16 @@ def download_youtube_audio(search_query):
             st.error(f"❌ Error downloading: {e}")
             return None
 
-# User input for YouTube URL or Song Name
 search_input = st.text_input("🎶 Enter YouTube URL or Song Name")
 file_path = None
 
 if search_input and st.button("⬇️ Fetch & Download"):
     st.info("⏳ Fetching audio from YouTube...")
-    downloaded_file_path = download_youtube_audio(search_input)
+    downloaded_file_path = download_youtube_audio(search_input, allow_cookies)
     if downloaded_file_path and os.path.exists(downloaded_file_path):
         file_path = downloaded_file_path
         st.success(f"✅ Downloaded: {os.path.basename(downloaded_file_path)}")
 
-# File Upload Feature
 uploaded_file = st.file_uploader("Upload an MP3 or WAV file", type=["mp3", "wav"])
 if uploaded_file:
     file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
@@ -74,24 +78,19 @@ if uploaded_file:
         f.write(uploaded_file.getbuffer())
     st.success(f"✅ File uploaded: {uploaded_file.name}")
 
-# Ensure a file is selected
 if file_path and os.path.exists(file_path):
     st.write(f"📂 Selected file: {os.path.basename(file_path)}")
-    
-    # Extract song duration
     try:
         duration = librosa.get_duration(filename=file_path)
         st.write(f"⏳ Song duration: {duration:.2f} seconds")
     except Exception:
         st.warning("⚠️ Unable to retrieve duration.")
 
-    # Separation Options
     if st.button("🎵 Separate Audio"):
         st.info("⏳ Processing... This may take a while.")
         output_folder = os.path.join(SEPARATED_DIR)
         os.makedirs(output_folder, exist_ok=True)
 
-        # Updated demucs command
         demucs_command = f"demucs --two-stems=vocals -o {shlex.quote(output_folder)} {shlex.quote(file_path)}"
         process = subprocess.run(demucs_command, shell=True, text=True, capture_output=True)
 
@@ -100,9 +99,7 @@ if file_path and os.path.exists(file_path):
         else:
             st.error(f"❌ Demucs error! {process.stderr}")
 
-# Karaoke Recording Feature
 st.header("🎤 Karaoke Recorder")
-
 if file_path:
     song_name = os.path.splitext(os.path.basename(file_path))[0]
     instrumental_path = None
@@ -122,8 +119,8 @@ if file_path:
         except Exception:
             st.warning("⚠️ Unable to retrieve duration.")
 
-        if st.button("🎙️ Start Recording"):
-            st.info("🎙️ Recording... Speak into the microphone!")
+        if st.button("🎧 Start Recording"):
+            st.info("🎧 Recording... Speak into the microphone!")
             samplerate = 44100
             recording = sd.rec(int(instrumental_duration * samplerate), samplerate=samplerate, channels=1, dtype=np.int16)
             sd.wait()
@@ -132,11 +129,9 @@ if file_path:
             sf.write(recorded_voice_path, recording, samplerate)
             st.success("✅ Recording complete!")
 
-            # Add timestamp to avoid overwriting
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             final_karaoke_path = os.path.join(RESULTS_DIR, f"{song_name}_karaoke_{timestamp}.wav")
 
-            # Merge Instrumental and Voice with adjusted volumes
             merge_command = f"ffmpeg -i {shlex.quote(instrumental_path)} -i {shlex.quote(recorded_voice_path)} -filter_complex '[0:a]volume=0.7[a0];[1:a]volume=1.5[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2' {shlex.quote(final_karaoke_path)}"
             merge_process = subprocess.run(merge_command, shell=True, capture_output=True, text=True)
 
