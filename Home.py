@@ -14,7 +14,7 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 os.makedirs(SEPARATED_DIR, exist_ok=True)
 
 # ---- UI Setup ----
-st.set_page_config(page_title="AI Karaoke Maker", page_icon=":musical_note:", layout="wide")
+st.set_page_config(page_title="AI Audio Separator", page_icon=":musical_note:", layout="wide")
 st.title("🎵 AI Audio Separator")
 st.write("Extract vocals and instrumentals from any song!")
 
