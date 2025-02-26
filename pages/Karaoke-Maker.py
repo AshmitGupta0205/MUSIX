@@ -33,16 +33,6 @@ def list_audio_devices():
                 index, name = line.split("] ", 1)
                 devices[index.strip(" [")] = name.strip()
     
-    elif system_os == "Linux":
-        result = subprocess.run(["arecord", "-l"], capture_output=True, text=True)
-        lines = result.stdout.split("\n")
-        for line in lines:
-            if "card" in line:
-                parts = line.split(":")
-                index = parts[0].split()[1]
-                name = parts[1].strip()
-                devices[index] = name
-    
     elif system_os == "Windows":
         result = subprocess.run(["ffmpeg", "-list_devices", "true", "-f", "dshow", "-i", "dummy"],
                                 capture_output=True, text=True, shell=True)
@@ -62,8 +52,6 @@ def get_ffmpeg_audio_device(selected_device):
     
     if system_os == "Darwin":
         return "avfoundation", f":{selected_device}"
-    elif system_os == "Linux":
-        return "alsa", f"hw:{selected_device}"
     elif system_os == "Windows":
         return "dshow", f"audio={selected_device}"
     else:
@@ -83,7 +71,7 @@ st.title("🎤 AI Karaoke Maker")
 st.write("Fetch a song, separate vocals, record your voice, and create a karaoke track!")
 
 devices = list_audio_devices()
-selected_device = st.selectbox("🎙 Select Input Device", options=list(devices.values()))
+selected_device = st.selectbox("🎙 Select Audio Device", options=list(devices.values()))
 
 devices_reversed = {v: k for k, v in devices.items()}
 selected_device_index = devices_reversed.get(selected_device, "0")
