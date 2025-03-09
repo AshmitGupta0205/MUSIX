@@ -35,16 +35,16 @@ This module transforms a song into a **karaoke track** by removing vocals and al
 - **Remove vocals** using htdemucs to keep only the instrumental.
 - **Play the instrumental track** while recording the user's voice.
 - **Merge the recorded voice with the instrumental** to create a final karaoke mix.
-- **Includes pitch shifting** and **lyrics display** for a better experience.
 
 ### How to Use:
-1. Run `Karaoke-Maker.py` separately:
+1. Run `Home.py`using streamlit:
    ```bash
-   streamlit run Karaoke-Maker.py
+   streamlit run Home.py
    ```
-2. Enter a song name to fetch and process it.
-3. Sing along while the instrumental plays in the background.
-4. Save and download the final karaoke mix.
+2. Change the page to Karaoke Maker.
+3. Enter a song name to fetch and process it.
+4. Sing along while the instrumental plays in the background.
+5. Save and download the final karaoke mix.
 
 ---
 
@@ -61,9 +61,6 @@ MUSIX/
 │   ├── Karaoke-Maker.py  # Renamed from karaoke.py (Karaoke Maker Page)  
 │  
 ├── Home.py               # Renamed from app.py (Main Home Page)  
-├── Procfile              # Added for deployment (used by Render/Heroku)  
-├── runtime.txt           # Added for specifying Python runtime version  
-│  
 └── requirements.txt      # Dependencies for the project  
 ```
 
@@ -81,7 +78,7 @@ Ensure you have **htdemucs**, **yt-dlp**, **Streamlit**, and **FFmpeg** installe
 
 ## 📌 Notes
 - `Home.py` runs on **Streamlit** for an easy-to-use web interface.
-- `Karaoke-Maker.py` is a separate module that focuses on karaoke functionality.
+- Karaoke-Maker is a separate module that focuses on karaoke functionality.
 - Output files are stored in the `separated/` and `outputs/` folders.
 
 ---
